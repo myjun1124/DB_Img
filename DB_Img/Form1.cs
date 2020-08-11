@@ -18,6 +18,10 @@ namespace DB_Img
         {
             InitializeComponent();
             textBox_Num.MaxLength = 3;
+
+            // 저장할 이미지 경로 수정 못하도록 읽기 전용
+            // ReadOnly가 bool 변수이기에 이렇게 수정 가능
+            textBox_ImgPath.ReadOnly = true;
         }
 
         private void Button_LoadImg_Click(object sender, EventArgs e)
@@ -32,6 +36,7 @@ namespace DB_Img
                 string picLoc = dialog.FileName.ToString();
                 textBox_ImgPath.Text = picLoc;
                 pictureBox1.ImageLocation = picLoc;
+                // 위에서 ReadOnly로 수정 가능하고 윈폼 툴에서 textBox ReadOnly true 설정 변경으로도 가능
             }
         }
 
@@ -39,7 +44,7 @@ namespace DB_Img
         {
             // 이미지 파일을 Binary 형태로 만들어서 DB에 저장하기 위한 작업
             byte[] imgBt = null;
-            FileStream fs;
+            FileStream fs;      // conn과 같이 filestream과 binaryreader도 닫아줘야함.
             BinaryReader br;
             
             // DB 연동 정보
@@ -49,46 +54,53 @@ namespace DB_Img
             MySqlCommand cmd = new MySqlCommand(sql, conn);
             MySqlDataReader dr;
 
+            //using (MySqlConnection conn2 = new MySqlConnection(str))
+            //using (MySqlConnection conn2 = new MySqlConnection(str))
+            //{
+            //    
+            //} using이 열려있는 동안만 작동되므로 끝나면 자동으로 닫힘.
+
             // 사진 없이 번호만 적고 저장하는 경우 에러 핸들링
             if (pictureBox1.Image == null)
-            {
-                MessageBox.Show("파일 불러오기 후 저장");
-            }
-            else
-            {
-                fs = new FileStream(this.textBox_ImgPath.Text, FileMode.Open, FileAccess.Read);
-                br = new BinaryReader(fs);
-                imgBt = br.ReadBytes((int)fs.Length);
-
-                // 새로운 것 저장하면 즉시 콤보박스 업데이트
-                ImageRow ir = new ImageRow();
-                ir.num = textBox_Num.Text;
-                ir.imgData = imgBt;
-
-                try
                 {
-                    // DB 연동 시작
-                    conn.Open();
-                    // DB에 이미지 저장
-                    cmd.Parameters.Add(new MySqlParameter("@image", imgBt));
-                    dr = cmd.ExecuteReader();
-                    MessageBox.Show("저장");
-
-                    // 그 자리에서 콤보박스 Item 업데이트
-                    comboBox_Select.Items.Add(ir);
-                    DataSet ds = GetData();
-                    dataGridView1.DataSource = ds.Tables[0];
-
+                    MessageBox.Show("파일 불러오기 후 저장");
                 }
-                catch (Exception ex)
+                else
                 {
-                    MessageBox.Show(ex.Message);
+                    fs = new FileStream(this.textBox_ImgPath.Text, FileMode.Open, FileAccess.Read);
+                    br = new BinaryReader(fs);
+                    imgBt = br.ReadBytes((int)fs.Length);
+
+                    // 새로운 것 저장하면 즉시 콤보박스 업데이트
+                    ImageRow ir = new ImageRow();
+                    ir.num = textBox_Num.Text;
+                    ir.imgData = imgBt;
+
+                    try
+                    {
+                        // DB 연동 시작
+                        conn.Open();
+                        // DB에 이미지 저장
+                        cmd.Parameters.Add(new MySqlParameter("@image", imgBt));
+                        dr = cmd.ExecuteReader();
+                        MessageBox.Show("저장");
+
+                        // 그 자리에서 콤보박스 Item 업데이트
+                        comboBox_Select.Items.Add(ir);
+                        DataSet ds = GetData();
+                        dataGridView1.DataSource = ds.Tables[0];
+
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message);
+                    }
+                    finally
+                    {
+                        conn.Close();
+                    fs.Close();
+                    }
                 }
-                finally
-                {
-                    conn.Close();
-                }
-            }
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -112,6 +124,8 @@ namespace DB_Img
             MySqlDataAdapter da = new MySqlDataAdapter(sql, conn);
             DataSet ds = new DataSet();
             da.Fill(ds);
+
+            // 이건 conn을 open한게 아닌가? 안닫힘.
 
             return ds;
         }
@@ -191,6 +205,7 @@ namespace DB_Img
 
             // DB 연동 정보
             string str = "Server=127.0.0.1;Port=3306;Database=test;Uid=root;Pwd=cheld4122";
+            // string sql = $"DELETE FROM image WHERE num = '{this.textBox_Num.Text}'";
             string sql = "DELETE FROM image WHERE num = '" + this.textBox_Num.Text + "'";
             MySqlConnection conn = new MySqlConnection(str);
             MySqlCommand cmd = new MySqlCommand(sql, conn);

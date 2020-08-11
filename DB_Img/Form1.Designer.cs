@@ -97,6 +97,7 @@
             // 
             this.textBox_ImgPath.Location = new System.Drawing.Point(60, 270);
             this.textBox_ImgPath.Name = "textBox_ImgPath";
+            this.textBox_ImgPath.ReadOnly = true;
             this.textBox_ImgPath.Size = new System.Drawing.Size(182, 21);
             this.textBox_ImgPath.TabIndex = 5;
             // 
