@@ -48,7 +48,7 @@ namespace DB_Img
             BinaryReader br;
             
             // DB 연동 정보
-            string str = "Server=127.0.0.1;Port=3306;Database=test;Uid=root;Pwd=cheld4122";
+            string str = "";
             string sql = "INSERT INTO image (num, image) VALUE('" + this.textBox_Num.Text + "', @image)";
             MySqlConnection conn = new MySqlConnection(str);
             MySqlCommand cmd = new MySqlCommand(sql, conn);
